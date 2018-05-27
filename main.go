@@ -5,12 +5,13 @@ import (
 	"image"
 	"log"
 	"os"
+	"time"
 
 	"github.com/MaxHalford/halfgone"
 	"github.com/disintegration/imaging"
 )
 
-const maxChunkHeight = 400
+const maxChunkHeight = 3000
 
 func isBlankLine(y int, img *image.Gray, bounds image.Rectangle) bool {
 
@@ -25,18 +26,18 @@ func isBlankLine(y int, img *image.Gray, bounds image.Rectangle) bool {
 
 func nextBreakPoint(offset int, img *image.Gray, bounds image.Rectangle, maxChunkHeight int) int {
 	chunkHeight := bounds.Max.Y - offset
-	if chunkHeight > maxChunkHeight {
-		chunkHeight = maxChunkHeight
+	if chunkHeight < maxChunkHeight {
+		return bounds.Max.Y
 	}
 
 	maxConsecutiveBlankRows := 0
-	breakpoint := offset + chunkHeight
+	breakpoint := offset + maxChunkHeight
 	currentBlankRows := 0
 
-	for y := 0; y < chunkHeight; y++ {
+	for y := 0; y < maxChunkHeight; y++ {
 		if isBlankLine(y+offset, img, bounds) {
 			currentBlankRows++
-			if currentBlankRows > maxConsecutiveBlankRows {
+			if currentBlankRows >= maxConsecutiveBlankRows {
 				maxConsecutiveBlankRows = currentBlankRows
 				breakpoint = y + offset + 1
 			}
@@ -72,6 +73,9 @@ func main() {
 	offsetY := 0
 	for offsetY < bounds.Max.Y {
 		breakpoint := nextBreakPoint(offsetY, dithered, bounds, maxChunkHeight)
+		if breakpoint-offsetY == 288 {
+			breakpoint++
+		}
 
 		bytesHeight := make([]byte, 2)
 		binary.LittleEndian.PutUint16(bytesHeight, uint16(breakpoint-offsetY))
@@ -85,7 +89,7 @@ func main() {
 				for ix := 0; ix < 8; ix++ {
 					var value byte
 
-					if x*8+ix > bounds.Max.X {
+					if x*8+ix >= bounds.Max.X || y >= bounds.Max.Y {
 						value = 0
 					} else {
 						pixel := dithered.GrayAt(x*8+ix, y)
@@ -109,5 +113,7 @@ func main() {
 	// Cut & end
 	buffer = append(buffer, 10, 0x1d, 0x56, 0x42, 0x30, 0xfa)
 
-	os.Stdout.Write(buffer)
+	file, _ := os.Create("/dev/usb/lp0")
+	file.Write(buffer)
+	time.Sleep(5 * time.Second)
 }
