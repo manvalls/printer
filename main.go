@@ -73,7 +73,7 @@ func main() {
 	offsetY := 0
 	for offsetY < bounds.Max.Y {
 		breakpoint := nextBreakPoint(offsetY, dithered, bounds, maxChunkHeight)
-		if breakpoint-offsetY == 288 {
+		if (breakpoint-offsetY)%288 == 0 {
 			breakpoint++
 		}
 
