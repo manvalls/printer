@@ -27,6 +27,10 @@ func isBlankLine(y int, img *image.Gray, bounds image.Rectangle) bool {
 func nextBreakPoint(offset int, img *image.Gray, bounds image.Rectangle, maxChunkHeight int) int {
 	chunkHeight := bounds.Max.Y - offset
 	if chunkHeight < maxChunkHeight {
+		if bounds.Max.Y%2 == 0 {
+			return bounds.Max.Y + 1
+		}
+
 		return bounds.Max.Y
 	}
 
@@ -44,6 +48,10 @@ func nextBreakPoint(offset int, img *image.Gray, bounds image.Rectangle, maxChun
 		} else {
 			currentBlankRows = 0
 		}
+	}
+
+	if breakpoint%2 == 0 {
+		return breakpoint - 1
 	}
 
 	return breakpoint
@@ -73,10 +81,6 @@ func main() {
 	offsetY := 0
 	for offsetY < bounds.Max.Y {
 		breakpoint := nextBreakPoint(offsetY, dithered, bounds, maxChunkHeight)
-		if (breakpoint-offsetY)%288 == 0 {
-			breakpoint++
-		}
-
 		bytesHeight := make([]byte, 2)
 		binary.LittleEndian.PutUint16(bytesHeight, uint16(breakpoint-offsetY))
 
