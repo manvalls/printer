@@ -3,6 +3,8 @@ package main
 import (
 	"encoding/binary"
 	"image"
+	"image/color"
+	"image/draw"
 	"log"
 	"os"
 	"time"
@@ -63,10 +65,14 @@ func main() {
 	buffer := make([]byte, 0, 10e3)
 	buffer = append(buffer, 0x1b, 0x40, 0x1b, 0x33, 50)
 
-	img, err := halfgone.LoadImage(os.Args[1])
+	src, err := halfgone.LoadImage(os.Args[1])
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	img := image.NewNRGBA(src.Bounds())
+	draw.Draw(img, img.Bounds(), &image.Uniform{color.White}, image.Point{}, draw.Src)
+	draw.Draw(img, img.Bounds(), src, src.Bounds().Min, draw.Over)
 
 	img = imaging.Resize(img, 576, 0, imaging.Lanczos)
 	gray := halfgone.ImageToGray(img)
